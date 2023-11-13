@@ -1,5 +1,5 @@
 import * as d3 from "d3";
-import { memo, useEffect, useRef, useState } from "react";
+import { memo, useEffect, useLayoutEffect, useRef, useState } from "react";
 import "./style.css";
 
 let treeData = {
@@ -7,28 +7,41 @@ let treeData = {
   children: [
     {
       name: "A",
+      w: 100,
+      h: 100,
       children: [
-        { name: "A1" },
-        { name: "A2" },
-        { name: "A3" },
-        { name: "A4" },
+        { name: "A1", s: 3 },
+        { name: "A2", s: 2 },
+        { name: "A3", s: 2 },
+        { name: "A4", s: 2 },
         {
           name: "C",
+          s: 1,
 
           children: [
-            { name: "C1" },
+            { name: "C1", s: 4 },
             {
               name: "D",
-              children: [{ name: "D1" }, { name: "D2" }],
+              w: 100,
+              h: 100,
+              children: [
+                { name: "D1", s: 10 },
+                { name: "D2", s: 5 },
+              ],
             },
           ],
         },
       ],
     },
-    { name: "Z" },
+    { name: "Z", s: 2 },
     {
       name: "B",
-      children: [{ name: "B1" }, { name: "B2" }, { name: "B3" }],
+      s: 5,
+      children: [
+        { name: "B1", s: 6 },
+        { name: "B2", s: 6 },
+        { name: "B3", s: 6 },
+      ],
     },
   ],
 };
@@ -37,10 +50,10 @@ const D3Treeview = memo((props) => {
   const renderCount = useRef(0);
   const { nodeElement } = props;
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     renderCount.current += 1;
     if (renderCount.current === 1) {
-      let margin = { top: 180, right: 90, bottom: 30, left: 90 },
+      let margin = { top: 280, right: 90, bottom: 30, left: 190 },
         width = 960 - margin.left - margin.right,
         height = 500 - margin.top - margin.bottom;
       let svg = d3
@@ -106,60 +119,74 @@ const D3Treeview = memo((props) => {
           })
           .on("click", (e, d) => click(d));
 
-        nodeEnter
-          .append("foreignObject")
-          .attr("width", "100%")
-          .attr("height", 50)
-          .attr("x", 0)
-          .attr("y", -16)
-          .append("xhtml:div")
-          .style("font", "14px 'Helvetica Neue'")
-          .html(function (d) {
-            return "<p>" + d.data.name + "</p>";
-          });
-
         // nodeEnter
-        //   .attr("class", "node")
-        //   .attr("r", 1e-6)
-        //   .style("fill", function (d) {
-        //     return d.parent ? "rgb(39, 43, 77)" : "#fe6e9e";
-        //   });
-        // nodeEnter
-        //   .append("rect")
-        //   .attr("rx", function (d) {
-        //     return 0;
-        //   })
-        //   .attr("ry", function (d) {
-        //     return 0;
-        //   })
-        //   .attr("stroke-width", function (d) {
-        //     return 1;
-        //   })
-        //   .attr("stroke", function (d) {
-        //     return "rgb(3, 192, 220)";
-        //   })
+        //   .append("foreignObject")
+        //   .attr("width", "35%")
+        //   .attr("height", "42%")
         //   .attr("x", 0)
-        //   .attr("y", -10)
-        //   .attr("width", function (d) {
-        //     return d.parent ? 40 : 20;
-        //   })
-        //   .attr("height", 20);
+        //   .attr("y", -30)
+        //   .append("xhtml:div")
+        //   .style("font", "11px 'Helvetica Neue'")
+        //   .html(function (d) {
+        //     return `
+        //     <div class="basic-card basic-card-aqua">
+        //         <div class="card-content">
+        //             <span class="card-title">Card Title</span>
+        //             <p class="card-text">
+        //                 Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s.
+        //             </p>
+        //             <p>${d.data.name}</p>
+        //         </div>
 
-        // nodeEnter
-        //   .append("text")
-        //   .style("fill", function (d) {
-        //     return "#ffffff";
-        //   })
-        //   .attr("dy", ".35em")
-        //   .attr("x", function (d) {
-        //     return d.parent ? 20 : 10;
-        //   })
-        //   .attr("text-anchor", function (d) {
-        //     return "middle";
-        //   })
-        //   .text(function (d) {
-        //     return d.data.name;
+        //         <div class="card-link">
+        //             <a href="#" title="Read Full"><span>Read Full</span></a>
+        //         </div>
+        //     </div>
+        //     `;
         //   });
+
+        nodeEnter
+          .attr("class", "node")
+          .attr("r", 1e-6)
+          .style("fill", function (d) {
+            return d.parent ? "rgb(39, 43, 77)" : "#fe6e9e";
+          });
+        nodeEnter
+          .append("rect")
+          .attr("rx", function (d) {
+            return 0;
+          })
+          .attr("ry", function (d) {
+            return 0;
+          })
+          .attr("stroke-width", function (d) {
+            return 1;
+          })
+          .attr("stroke", function (d) {
+            return "rgb(3, 192, 220)";
+          })
+          .attr("x", 0)
+          .attr("y", -10)
+          .attr("width", function (d) {
+            return d.parent ? 40 : 20;
+          })
+          .attr("height", 20);
+
+        nodeEnter
+          .append("text")
+          .style("fill", function (d) {
+            return "#ffffff";
+          })
+          .attr("dy", ".35em")
+          .attr("x", function (d) {
+            return d.parent ? 20 : 10;
+          })
+          .attr("text-anchor", function (d) {
+            return "middle";
+          })
+          .text(function (d) {
+            return d.data.name;
+          });
 
         let nodeUpdate = nodeEnter.merge(node);
 
