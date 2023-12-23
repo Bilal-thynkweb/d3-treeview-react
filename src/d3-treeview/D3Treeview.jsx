@@ -1,7 +1,11 @@
 import * as d3 from "d3";
 import { memo, useEffect, useLayoutEffect, useRef, useState } from "react";
 import "./style.css";
+import Card from "../component/card/Card";
 
+window.handleSpan = function () {
+  alert("span clicked");
+};
 let treeData = {
   name: "T",
   children: [
@@ -53,6 +57,7 @@ const D3Treeview = memo((props) => {
   useLayoutEffect(() => {
     renderCount.current += 1;
     if (renderCount.current === 1) {
+      let count = 0;
       let margin = { top: 280, right: 90, bottom: 30, left: 190 },
         width = 960 - margin.left - margin.right,
         height = 500 - margin.top - margin.bottom;
@@ -117,7 +122,9 @@ const D3Treeview = memo((props) => {
           .attr("transform", function (d) {
             return "translate(" + source.y0 + "," + source.x0 + ")";
           })
-          .on("click", (e, d) => click(d));
+          .on("click", (e, d) => {
+            click(d);
+          });
 
         // nodeEnter
         //   .append("foreignObject")
@@ -139,7 +146,7 @@ const D3Treeview = memo((props) => {
         //         </div>
 
         //         <div class="card-link">
-        //             <a href="#" title="Read Full"><span>Read Full</span></a>
+        //             <a onclick='window.handleSpan()' href="#" title="Read Full"><span>Read Full</span></a>
         //         </div>
         //     </div>
         //     `;
