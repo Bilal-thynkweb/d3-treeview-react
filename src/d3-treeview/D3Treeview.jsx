@@ -1,54 +1,51 @@
 import * as d3 from "d3";
-import { memo, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { memo, useLayoutEffect, useRef } from "react";
 import "./style.css";
-import Card from "../component/card/Card";
+import data from "../../data.json";
 
-window.handleSpan = function () {
-  alert("span clicked");
-};
-let treeData = {
-  name: "T",
-  children: [
-    {
-      name: "A",
-      w: 100,
-      h: 100,
-      children: [
-        { name: "A1", s: 3 },
-        { name: "A2", s: 2 },
-        { name: "A3", s: 2 },
-        { name: "A4", s: 2 },
-        {
-          name: "C",
-          s: 1,
+// let treeData = {
+//   name: "T",
+//   children: [
+//     {
+//       name: "A",
+//       w: 100,
+//       h: 100,
+//       children: [
+//         { name: "A1", s: 3 },
+//         { name: "A2", s: 2 },
+//         { name: "A3", s: 2 },
+//         { name: "A4", s: 2 },
+//         {
+//           name: "C",
+//           s: 1,
 
-          children: [
-            { name: "C1", s: 4 },
-            {
-              name: "D",
-              w: 100,
-              h: 100,
-              children: [
-                { name: "D1", s: 10 },
-                { name: "D2", s: 5 },
-              ],
-            },
-          ],
-        },
-      ],
-    },
-    { name: "Z", s: 2 },
-    {
-      name: "B",
-      s: 5,
-      children: [
-        { name: "B1", s: 6 },
-        { name: "B2", s: 6 },
-        { name: "B3", s: 6 },
-      ],
-    },
-  ],
-};
+//           children: [
+//             { name: "C1", s: 4 },
+//             {
+//               name: "D",
+//               w: 100,
+//               h: 100,
+//               children: [
+//                 { name: "D1", s: 10 },
+//                 { name: "D2", s: 5 },
+//               ],
+//             },
+//           ],
+//         },
+//       ],
+//     },
+//     { name: "Z", s: 2 },
+//     {
+//       name: "B",
+//       s: 5,
+//       children: [
+//         { name: "B1", s: 6 },
+//         { name: "B2", s: 6 },
+//         { name: "B3", s: 6 },
+//       ],
+//     },
+//   ],
+// };
 const D3Treeview = memo((props) => {
   const svgRef = useRef();
   const renderCount = useRef(0);
@@ -89,7 +86,7 @@ const D3Treeview = memo((props) => {
           return a.parent == b.parent ? 1 : 2;
         });
 
-      root = d3.hierarchy(treeData, function (d) {
+      root = d3.hierarchy(data, function (d) {
         return d.children;
       });
       root.x0 = height / 2;
@@ -126,74 +123,37 @@ const D3Treeview = memo((props) => {
             click(d);
           });
 
-        // nodeEnter
-        //   .append("foreignObject")
-        //   .attr("width", "35%")
-        //   .attr("height", "42%")
-        //   .attr("x", 0)
-        //   .attr("y", -30)
-        //   .append("xhtml:div")
-        //   .style("font", "11px 'Helvetica Neue'")
-        //   .html(function (d) {
-        //     return `
-        //     <div class="basic-card basic-card-aqua">
-        //         <div class="card-content">
-        //             <span class="card-title">Card Title</span>
-        //             <p class="card-text">
-        //                 Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s.
-        //             </p>
-        //             <p>${d.data.name}</p>
-        //         </div>
-
-        //         <div class="card-link">
-        //             <a onclick='window.handleSpan()' href="#" title="Read Full"><span>Read Full</span></a>
-        //         </div>
-        //     </div>
-        //     `;
-        //   });
-
         nodeEnter
           .attr("class", "node")
           .attr("r", 1e-6)
           .style("fill", function (d) {
             return d.parent ? "rgb(39, 43, 77)" : "#fe6e9e";
           });
+
         nodeEnter
-          .append("rect")
-          .attr("rx", function (d) {
-            return 0;
-          })
-          .attr("ry", function (d) {
-            return 0;
-          })
-          .attr("stroke-width", function (d) {
-            return 1;
-          })
-          .attr("stroke", function (d) {
-            return "rgb(3, 192, 220)";
-          })
-          .attr("x", 0)
-          .attr("y", -10)
-          .attr("width", function (d) {
-            return d.parent ? 40 : 20;
-          })
-          .attr("height", 20);
+          .append("circle")
+          .attr("r", 2.5)
+          .attr("fill", (d) => (d._children ? "#555" : "#999"))
+          .attr("stroke-width", 10);
 
         nodeEnter
           .append("text")
           .style("fill", function (d) {
-            return "#ffffff";
+            return "black";
           })
           .attr("dy", ".35em")
-          .attr("x", function (d) {
-            return d.parent ? 20 : 10;
-          })
+          .attr("x", (d) => (d._children ? -6 : 6))
           .attr("text-anchor", function (d) {
-            return "middle";
+            return d._children ? "end" : "start";
           })
           .text(function (d) {
             return d.data.name;
-          });
+          })
+          .clone(true)
+          .lower()
+          .attr("stroke-linejoin", "round")
+          .attr("stroke-width", 3)
+          .attr("stroke", "white");
 
         let nodeUpdate = nodeEnter.merge(node);
 
@@ -263,40 +223,37 @@ const D3Treeview = memo((props) => {
           }
 
           if (d.children == null && d._children == null) {
+            // if leaf node
             // Add new child node here
-            let newNodeData = {
-              name: "B4",
-              children: [
-                { name: "B5" },
-                { name: "B6" },
-                { name: "B7", children: [{ name: "B8" }, { name: "B9" }] },
-              ],
-            };
-            let newNode = d3.hierarchy(newNodeData, function (d) {
-              return d.children;
-            });
+            mockApiCall().then((res) => {
+              let { newNodeData } = res.data;
+              console.log(newNodeData);
+              let newNode = d3.hierarchy(newNodeData, function (d) {
+                return d.children;
+              });
 
-            newNode.parent = d;
-            adjustDepth(newNode, d.depth + 1); // Adjusts the depth starting from 5
-            adjustHeight(d, newNode.height + 1); // Adjusts the height starting from 5
+              newNode.parent = d;
+              adjustDepth(newNode, d.depth + 1); // Adjusts the depth starting from 5
+              adjustHeight(d, newNode.height + 1); // Adjusts the height starting from 5
 
-            newNode.descendants().forEach((node, index) => {
-              node.id = generateRandomId();
-              node.y = node.depth * 180;
-              node._children = node.children;
-              node.children = null;
-            });
-            if (!d.children) {
-              d.children = [];
-              if (!d.data) {
-                d.data = {};
+              newNode.descendants().forEach((node, index) => {
+                node.id = generateRandomId();
+                node.y = node.depth * 180;
+                node._children = node.children;
+                node.children = null;
+              });
+              if (!d.children) {
+                d.children = [];
+                if (!d.data) {
+                  d.data = {};
+                }
+                d.data.children = [];
               }
-              d.data.children = [];
-            }
-            // Push new node to children array
-            d.children.push(newNode);
-            d.data.children.push(newNode.data);
-            // mockApiCall().then((data) => console.log(data));
+              // Push new node to children array
+              d.children.push(newNode);
+              d.data.children.push(newNode.data);
+              update(d);
+            });
           }
           update(d);
         }
@@ -329,11 +286,20 @@ function mockApiCall() {
     setTimeout(() => {
       const data = {
         message: "Hello, this is a mock API call!",
+        status: 200,
+        newNodeData: {
+          name: "B4",
+          children: [
+            { name: "B5" },
+            { name: "B6" },
+            { name: "B7", children: [{ name: "B8" }, { name: "B9" }] },
+          ],
+        },
       };
 
       // Simulate a successful API call
-      resolve(data);
-    }, 2000);
+      resolve({ data });
+    }, 300);
   });
 }
 
