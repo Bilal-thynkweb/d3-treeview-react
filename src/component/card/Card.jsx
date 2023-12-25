@@ -1,4 +1,5 @@
 import React, { memo } from "react";
+import "./Card.css";
 
 const Card = memo(() => {
   return (
