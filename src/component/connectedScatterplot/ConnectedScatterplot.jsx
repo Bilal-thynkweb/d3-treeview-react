@@ -24,6 +24,11 @@ const ConnectedScatterplot = memo(() => {
         .append("div")
         .style("position", "absolute")
         .style("visibility", "hidden")
+        .style("cursor", "pointer")
+        .style("background", "antiquewhite")
+        .style("padding", "6px")
+        .style("border-radius", "7px")
+        .style("font-size", "14px")
         .text("Tooltip text");
 
       const svg = d3
@@ -54,16 +59,18 @@ const ConnectedScatterplot = memo(() => {
         .y((d) => y(d.gas));
 
       const l = length(line(driving));
-      svg
+      svg // generate y axis UI
         .append("g")
+        .attr("class", "x axis") // add class for X axis
         .attr("transform", `translate(0,${height - marginBottom})`)
         .call(d3.axisBottom(x).ticks(width / 80))
         .call((g) => g.select(".domain").remove())
         .call((g) =>
-          g
+          g // generating grid lines vertically on x axis
             .selectAll(".tick line")
             .clone()
             .attr("y2", -height)
+            .attr("id", "y-line")
             .attr("stroke-opacity", 0.1)
         )
         .call((g) =>
@@ -77,13 +84,14 @@ const ConnectedScatterplot = memo(() => {
             .text("Miles per person per year")
         );
 
-      svg
+      svg // generate x axis UI
         .append("g")
+        .attr("class", "y axis") // add class for Y axis
         .attr("transform", `translate(${marginLeft},0)`)
         .call(d3.axisLeft(y).ticks(null, "$.2f"))
         .call((g) => g.select(".domain").remove())
         .call((g) =>
-          g
+          g // generating grid lines horizontally on y axis
             .selectAll(".tick line")
             .clone()
             .attr("x2", width)
@@ -99,10 +107,11 @@ const ConnectedScatterplot = memo(() => {
             .text("Cost per gallon")
         );
 
-      svg
+      svg // generating line
         .append("path")
         .datum(driving)
         .attr("fill", "none")
+        .attr("id", "svg-line")
         .attr("stroke", "black")
         .attr("stroke-width", 2.5)
         .attr("stroke-linejoin", "round")
@@ -114,7 +123,7 @@ const ConnectedScatterplot = memo(() => {
         .ease(d3.easeLinear)
         .attr("stroke-dasharray", `${l},${l}`);
 
-      svg
+      svg // generate circular points
         .append("g")
         .attr("fill", "white")
         .attr("stroke", "black")
@@ -125,10 +134,19 @@ const ConnectedScatterplot = memo(() => {
         .attr("cx", (d) => x(d.miles))
         .attr("cy", (d) => y(d.gas))
         .attr("r", 3)
-        .on("mouseover", fadeInArea)
-        .on("mouseout", fadeOutArea);
+        .on("mouseover", function (event, d) {
+          d3.select(this).style("cursor", "pointer");
+          tooltip
+            .text(d?.miles)
+            .style("top", event.pageY - 15 + "px")
+            .style("left", event.pageX + 10 + "px");
+          return tooltip.style("visibility", "visible");
+        })
+        .on("mouseout", function (d) {
+          return tooltip.style("visibility", "hidden");
+        });
 
-      const label = svg
+      const label = svg // point-values
         .append("g")
         .attr("font-family", "sans-serif")
         .attr("font-size", 10)
@@ -136,6 +154,7 @@ const ConnectedScatterplot = memo(() => {
         .data(driving)
         .join("text")
         .attr("transform", (d) => `translate(${x(d.miles)},${y(d.gas)})`)
+        .attr("id", "point-value")
         .attr("fill-opacity", 0)
         .text((d) => d.year)
         .attr("stroke", "white")
@@ -169,6 +188,65 @@ const ConnectedScatterplot = memo(() => {
           (d, i) => (length(line(driving.slice(0, i + 1))) / l) * (5000 - 125)
         )
         .attr("fill-opacity", 1);
+
+      // Assuming you have defined your x and y scales, and your svg
+      let zoom = d3
+        .zoom()
+        .scaleExtent([1, 2]) // This control how much you can unzoom (x1) and zoom (x10)
+        .on("zoom", zoomed);
+
+      svg.call(zoom);
+
+      function zoomed(event) {
+        // create new scale objects based on event
+        var new_xScale = event.transform.rescaleX(x);
+        var new_yScale = event.transform.rescaleY(y);
+        svg
+          .select("#svg-line")
+          .attr(
+            "transform",
+            "translate(" +
+              event.transform.x +
+              "," +
+              event.transform.y +
+              ") scale(" +
+              event.transform.k +
+              ")"
+          );
+        // update axes
+        svg.select(".x.axis").call(d3.axisBottom(new_xScale));
+        svg.select(".y.axis").call(d3.axisLeft(new_yScale));
+
+        // update circle positions
+        svg
+          .selectAll("circle")
+          .attr("cx", function (d) {
+            return new_xScale(d.miles);
+          })
+          .attr("cy", function (d) {
+            return new_yScale(d.gas);
+          });
+
+        // update point values
+        svg
+          .selectAll("#point-value")
+          .attr(
+            "transform",
+            (d) =>
+              `translate(${new_xScale(d.miles)},${new_yScale(d.gas)}) scale(${
+                event.transform.k
+              })`
+          );
+
+        // update grid lines
+        svg.select(".x.axis").call((g) => {
+          console.log("g", g.selectAll(".tick line"));
+        });
+
+        // Update the x and y scales
+        // x.domain(new_xScale.domain());
+        // y.domain(new_yScale.domain());
+      }
 
       let initialOpacity = 0;
 
